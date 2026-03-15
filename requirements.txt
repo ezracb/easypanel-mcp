@@ -1,0 +1,9 @@
+# Core dependencies
+httpx>=0.25.0
+python-dotenv>=1.0.0
+
+# MCP Server
+aiohttp>=3.9.0
+
+# Type hints
+typing-extensions>=4.8.0

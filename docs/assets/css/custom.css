@@ -1,0 +1,490 @@
+/* 
+ * EasyPanel MCP Documentation - Custom Styles
+ * Minimalist design with blue tones
+ * Optimized for readability and visual appeal
+ */
+
+/* ============================================
+   CSS Variables - Blue Color Palette
+   ============================================ */
+:root {
+  /* Primary blues */
+  --md-primary-fg-color: #1E3A8A;        /* Deep blue */
+  --md-primary-fg-color--light: #3B82F6; /* Bright blue */
+  --md-primary-fg-color--dark: #1E3A8A;  /* Dark blue */
+  
+  /* Accent blues */
+  --md-accent-fg-color: #60A5FA;         /* Light blue accent */
+  --md-accent-fg-color--transparent: rgba(96, 165, 250, 0.1);
+  
+  /* Background colors */
+  --md-default-bg-color: #FFFFFF;
+  --md-default-bg-color--light: #F8FAFC;
+  --md-default-bg-color--dark: #0F172A;
+  
+  /* Text colors */
+  --md-typeset-color: #1E293B;
+  --md-typeset-color--light: #64748B;
+  
+  /* Code blocks */
+  --md-code-bg-color: #1E293B;
+  --md-code-fg-color: #E2E8F0;
+  --md-code-hl-color: #3B82F6;
+  
+  /* Shadows */
+  --md-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --md-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --md-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  
+  /* Border radius */
+  --md-border-radius: 8px;
+  --md-border-radius-lg: 12px;
+}
+
+/* Dark mode adjustments */
+[data-md-color-scheme="slate"] {
+  --md-default-bg-color: #0F172A;
+  --md-default-bg-color--light: #1E293B;
+  --md-typeset-color: #E2E8F0;
+  --md-typeset-color--light: #94A3B8;
+}
+
+/* ============================================
+   Typography
+   ============================================ */
+.md-typeset {
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: var(--md-typeset-color);
+}
+
+.md-typeset h1,
+.md-typeset h2,
+.md-typeset h3,
+.md-typeset h4,
+.md-typeset h5,
+.md-typeset h6 {
+  font-weight: 700;
+  color: var(--md-primary-fg-color);
+  letter-spacing: -0.025em;
+}
+
+[data-md-color-scheme="slate"] .md-typeset h1,
+[data-md-color-scheme="slate"] .md-typeset h2,
+[data-md-color-scheme="slate"] .md-typeset h3 {
+  color: var(--md-primary-fg-color--light);
+}
+
+.md-typeset h1 {
+  font-size: 2.5rem;
+  margin-bottom: 1.5rem;
+  background: linear-gradient(135deg, var(--md-primary-fg-color) 0%, var(--md-primary-fg-color--light) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.md-typeset h2 {
+  font-size: 1.875rem;
+  margin-top: 2.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--md-accent-fg-color);
+}
+
+.md-typeset h3 {
+  font-size: 1.5rem;
+  margin-top: 2rem;
+}
+
+.md-typeset p {
+  margin-bottom: 1.25rem;
+}
+
+.md-typeset a {
+  color: var(--md-primary-fg-color--light);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.md-typeset a:hover {
+  color: var(--md-accent-fg-color);
+  text-decoration: underline;
+}
+
+/* ============================================
+   Header & Navigation
+   ============================================ */
+.md-header {
+  background: linear-gradient(135deg, var(--md-primary-fg-color) 0%, var(--md-primary-fg-color--light) 100%);
+  backdrop-filter: blur(10px);
+  box-shadow: var(--md-shadow-md);
+}
+
+.md-tabs {
+  background-color: var(--md-default-bg-color--light);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.md-nav__link--active {
+  color: var(--md-primary-fg-color--light);
+  font-weight: 600;
+}
+
+.md-nav__link:hover {
+  color: var(--md-accent-fg-color);
+}
+
+/* ============================================
+   Search Bar
+   ============================================ */
+.md-search__input {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: var(--md-default-bg-color);
+  border-radius: var(--md-border-radius);
+}
+
+.md-search__input::placeholder {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+[data-md-color-scheme="slate"] .md-search__input {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.md-search__icon {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* ============================================
+   Code Blocks
+   ============================================ */
+.md-typeset pre > code {
+  border-radius: var(--md-border-radius);
+  box-shadow: var(--md-shadow-md);
+  font-size: 0.85rem;
+}
+
+.md-typeset code {
+  background-color: var(--md-default-bg-color--light);
+  padding: 0.2em 0.4em;
+  border-radius: 4px;
+  font-size: 0.875em;
+  color: var(--md-primary-fg-color--light);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+[data-md-color-scheme="slate"] .md-typeset code {
+  background-color: rgba(30, 41, 59, 0.5);
+}
+
+/* Code block header */
+.md-typeset .highlight span.filename {
+  background-color: var(--md-default-bg-color--light);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  padding: 0.5rem 1rem;
+  font-size: 0.75rem;
+  color: var(--md-typeset-color--light);
+  border-radius: var(--md-border-radius) var(--md-border-radius) 0 0;
+}
+
+/* Copy button */
+.md-clipboard {
+  color: var(--md-typeset-color--light);
+  transition: color 0.2s ease;
+}
+
+.md-clipboard:hover {
+  color: var(--md-accent-fg-color);
+}
+
+/* ============================================
+   Admonitions (Notes, Warnings, Tips)
+   ============================================ */
+.md-typeset .admonition {
+  border-radius: var(--md-border-radius);
+  box-shadow: var(--md-shadow-sm);
+  border-left: 4px solid;
+}
+
+.md-typeset .admonition.note {
+  border-left-color: var(--md-primary-fg-color--light);
+  background-color: rgba(59, 130, 246, 0.05);
+}
+
+.md-typeset .admonition.note .admonition-title {
+  background-color: rgba(59, 130, 246, 0.1);
+  color: var(--md-primary-fg-color);
+}
+
+.md-typeset .admonition.warning {
+  border-left-color: #F59E0B;
+  background-color: rgba(245, 158, 11, 0.05);
+}
+
+.md-typeset .admonition.tip {
+  border-left-color: #10B981;
+  background-color: rgba(16, 185, 129, 0.05);
+}
+
+.md-typeset .admonition.danger {
+  border-left-color: #EF4444;
+  background-color: rgba(239, 68, 68, 0.05);
+}
+
+/* ============================================
+   Tables
+   ============================================ */
+.md-typeset table:not([class]) {
+  border-radius: var(--md-border-radius);
+  overflow: hidden;
+  box-shadow: var(--md-shadow-sm);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.md-typeset table:not([class]) th {
+  background: linear-gradient(135deg, var(--md-primary-fg-color) 0%, var(--md-primary-fg-color--light) 100%);
+  color: white;
+  font-weight: 600;
+  padding: 0.75rem 1rem;
+}
+
+.md-typeset table:not([class]) td {
+  padding: 0.75rem 1rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.md-typeset table:not([class]) tr:hover {
+  background-color: var(--md-default-bg-color--light);
+}
+
+/* ============================================
+   Buttons
+   ============================================ */
+.md-typeset .md-button {
+  background: linear-gradient(135deg, var(--md-primary-fg-color) 0%, var(--md-primary-fg-color--light) 100%);
+  color: white;
+  border-radius: var(--md-border-radius);
+  padding: 0.5rem 1.5rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: var(--md-shadow-sm);
+}
+
+.md-typeset .md-button:hover {
+  box-shadow: var(--md-shadow-md);
+  transform: translateY(-2px);
+}
+
+.md-typeset .md-button--secondary {
+  background: transparent;
+  color: var(--md-primary-fg-color);
+  border: 2px solid var(--md-primary-fg-color);
+}
+
+/* ============================================
+   Cards & Feature Grid
+   ============================================ */
+.md-typeset .grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin: 1.5rem 0;
+}
+
+.md-typeset .grid .card {
+  background: var(--md-default-bg-color);
+  border-radius: var(--md-border-radius-lg);
+  padding: 1.5rem;
+  box-shadow: var(--md-shadow-sm);
+  border: 1px solid rgba(59, 130, 246, 0.1);
+  transition: all 0.3s ease;
+}
+
+.md-typeset .grid .card:hover {
+  box-shadow: var(--md-shadow-lg);
+  transform: translateY(-4px);
+  border-color: var(--md-primary-fg-color--light);
+}
+
+.md-typeset .grid .card h3 {
+  color: var(--md-primary-fg-color);
+  font-size: 1.25rem;
+  margin-top: 0;
+}
+
+/* ============================================
+   Badges
+   ============================================ */
+.md-typeset .badge {
+  display: inline-block;
+  padding: 0.25em 0.75em;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.md-typeset .badge--primary {
+  background-color: var(--md-primary-fg-color--light);
+  color: white;
+}
+
+.md-typeset .badge--success {
+  background-color: #10B981;
+  color: white;
+}
+
+.md-typeset .badge--warning {
+  background-color: #F59E0B;
+  color: white;
+}
+
+/* ============================================
+   Hero Section (Homepage)
+   ============================================ */
+.hero-section {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: linear-gradient(135deg, var(--md-default-bg-color--light) 0%, var(--md-default-bg-color) 100%);
+  border-radius: var(--md-border-radius-lg);
+  margin-bottom: 2rem;
+}
+
+.hero-section h1 {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.hero-section p {
+  font-size: 1.25rem;
+  color: var(--md-typeset-color--light);
+  max-width: 600px;
+  margin: 0 auto 2rem;
+}
+
+/* ============================================
+   Feature Icons
+   ============================================ */
+.feature-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  background: linear-gradient(135deg, var(--md-primary-fg-color) 0%, var(--md-primary-fg-color--light) 100%);
+  border-radius: var(--md-border-radius-lg);
+  margin-bottom: 1rem;
+  box-shadow: var(--md-shadow-md);
+}
+
+.feature-icon svg {
+  width: 32px;
+  height: 32px;
+  fill: white;
+}
+
+/* ============================================
+   Quick Links Section
+   ============================================ */
+.quick-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: center;
+  margin: 2rem 0;
+}
+
+.quick-links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: var(--md-default-bg-color--light);
+  border-radius: var(--md-border-radius);
+  color: var(--md-typeset-color);
+  text-decoration: none;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.quick-links a:hover {
+  background: var(--md-primary-fg-color--light);
+  color: white;
+  transform: translateY(-2px);
+}
+
+/* ============================================
+   Footer
+   ============================================ */
+.md-footer {
+  background: var(--md-default-bg-color--light);
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.md-footer-meta {
+  background: var(--md-default-bg-color);
+}
+
+.md-social__link svg {
+  fill: var(--md-primary-fg-color);
+}
+
+/* ============================================
+   Animations
+   ============================================ */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.md-main__inner {
+  animation: fadeIn 0.5s ease-out;
+}
+
+/* ============================================
+   Responsive Design
+   ============================================ */
+@media (max-width: 768px) {
+  .md-typeset h1 {
+    font-size: 2rem;
+  }
+  
+  .md-typeset h2 {
+    font-size: 1.5rem;
+  }
+  
+  .hero-section {
+    padding: 2rem 1rem;
+  }
+  
+  .hero-section h1 {
+    font-size: 2rem;
+  }
+  
+  .md-typeset .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ============================================
+   Print Styles
+   ============================================ */
+@media print {
+  .md-header,
+  .md-tabs,
+  .md-footer {
+    display: none;
+  }
+  
+  .md-typeset pre > code {
+    box-shadow: none;
+    border: 1px solid #ccc;
+  }
+}
