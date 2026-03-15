@@ -12,14 +12,19 @@ Complete reference of all tools available in EasyPanel MCP.
 
 ## 📋 Tools by Category
 
-EasyPanel MCP provides **17 tools** organized into 4 categories:
+EasyPanel MCP provides **25+ tools** organized into 7 categories:
 
 | Category | Tools | Description |
 |----------|-------|-------------|
-| 📦 **Services** | 7 tools | Manage Docker services |
-| 🚀 **Deployments** | 4 tools | Control deployments |
-| 🌐 **Networks** | 3 tools | Manage Docker networks |
+| 📦 **Services** | 10 tools | Manage Docker services + intelligent logs |
+| 🚀 **Deployments** | 4 tools | Control deployments and versions |
+| 🌐 **Networks** | 3 tools | Auto-discover network topology |
 | 📁 **Projects** | 4 tools | Organize resources |
+| 📊 **Monitoring** | 4 tools | Real-time system metrics |
+| ⚡ **Scaling** | 2 tools | Vertical and auto-scaling |
+| 🔒 **Security** | 3 tools | Domains and Git authentication |
+
+**Total: 30 tools** for complete infrastructure management with AI.
 
 ---
 
@@ -491,6 +496,206 @@ Delete a project.
 
 ---
 
+## 📊 Monitoring Tools
+
+Real-time system and service monitoring.
+
+### `get_system_stats`
+
+Get system statistics (CPU, memory, disk, network).
+
+**Example:**
+```json
+{
+  "name": "get_system_stats",
+  "arguments": {}
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "cpuInfo": {"usedPercentage": 45, "count": 4},
+    "memInfo": {"usedMemPercentage": 52, "totalMemMb": 16000},
+    "diskInfo": {"usedPercentage": 10, "totalGb": 300},
+    "network": {"inputMb": 1200, "outputMb": 3400}
+  },
+  "message": "System stats retrieved"
+}
+```
+
+---
+
+### `get_service_stats`
+
+Get service-specific statistics.
+
+**Parameters:** None (returns all service stats)
+
+---
+
+### `health_check`
+
+Check if EasyPanel API is healthy and accessible.
+
+**Example:**
+```json
+{
+  "name": "health_check",
+  "arguments": {}
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": true,  // true = healthy
+  "message": "EasyPanel API is healthy"
+}
+```
+
+---
+
+### `get_server_ip`
+
+Get the server's public IP address.
+
+**Example:**
+```json
+{
+  "name": "get_server_ip",
+  "arguments": {}
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": "203.0.113.42",
+  "message": "Server IP retrieved"
+}
+```
+
+---
+
+## ⚡ Scaling Tools
+
+Vertical and automatic scaling based on resource usage.
+
+### `scale_service`
+
+Manually scale service resources (CPU/Memory).
+
+**Parameters:**
+- `service_id` (required): Service to scale
+- `cpu` (optional): New CPU cores (e.g., 2, 4, 8)
+- `memory` (optional): New memory in MB (e.g., 4096, 8192)
+
+**Example:**
+```json
+{
+  "name": "scale_service",
+  "arguments": {
+    "service_id": "svc_abc",
+    "cpu": 4,
+    "memory": 8192
+  }
+}
+```
+
+---
+
+### `auto_scale_service`
+
+Automatically scale service based on resource thresholds.
+
+**Parameters:**
+- `service_id` (required): Service to scale
+- `cpu_threshold` (optional): CPU % to trigger scaling (default: 80)
+- `memory_threshold` (optional): Memory % to trigger (default: 80)
+- `max_cpu` (optional): Maximum CPU cores (default: 8)
+- `max_memory` (optional): Maximum memory MB (default: 16384)
+
+**Example:**
+```json
+{
+  "name": "auto_scale_service",
+  "arguments": {
+    "service_id": "svc_abc",
+    "cpu_threshold": 80,
+    "memory_threshold": 80
+  }
+}
+```
+
+**Behavior:**
+- Checks current CPU and memory usage
+- If usage > threshold, doubles resources (up to max)
+- Returns scaling decision and applied changes
+
+---
+
+## 🔒 Security Tools
+
+Domain management and Git authentication.
+
+### `list_domains`
+
+List all domains.
+
+**Parameters:**
+- `service_id` (optional): Filter by service
+
+---
+
+### `create_domain`
+
+Create a new domain for a service.
+
+**Parameters:**
+- `name` (required): Domain name (e.g., `api.example.com`)
+- `service_id` (optional): Service to attach domain to
+
+**Example:**
+```json
+{
+  "name": "create_domain",
+  "arguments": {
+    "name": "api.myapp.com",
+    "service_id": "svc_abc"
+  }
+}
+```
+
+---
+
+### `get_public_key`
+
+Get Git public key for repository authentication.
+
+**Example:**
+```json
+{
+  "name": "get_public_key",
+  "arguments": {}
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC7...",
+  "message": "Public key retrieved"
+}
+```
+
+---
+
 ## 🆘 Error Handling
 
 ### Common Errors
@@ -511,6 +716,8 @@ Delete a project.
 - **[Deployments Tools](deployments.md)** - Deployment management
 - **[Networks Tools](networks.md)** - Network configuration
 - **[Projects Tools](projects.md)** - Project organization
+- **[Advanced Features](../advanced/features.md)** - Security, scaling, monitoring
+- **[AI Agents Integration](../integration/ai-agents.md)** - Connect AI agents
 
 ---
 
