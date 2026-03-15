@@ -1903,6 +1903,7 @@
 </div>
 <hr />
 <h2 id="herramientas-disponibles">🛠️ Herramientas Disponibles<a class="headerlink" href="#herramientas-disponibles" title="Permanent link">&para;</a></h2>
+<p><strong>30 herramientas</strong> organizadas en <strong>7 categorías</strong> para gestión completa de infraestructura con IA:</p>
 <table>
 <thead>
 <tr>
@@ -1914,8 +1915,8 @@
 <tbody>
 <tr>
 <td>📦 <strong>Servicios</strong></td>
-<td><code>list_services</code>, <code>create_service</code>, <code>update_service</code>, <code>delete_service</code>, <code>restart_service</code>, <code>get_service_logs</code></td>
-<td>Gestión completa de servicios Docker</td>
+<td><code>list_services</code>, <code>get_service</code>, <code>create_service</code>, <code>update_service</code>, <code>delete_service</code>, <code>restart_service</code>, <code>start_service</code>, <code>stop_service</code>, <code>deploy_service</code>, <code>get_service_logs</code></td>
+<td>Gestión completa de servicios Docker + logs inteligentes</td>
 </tr>
 <tr>
 <td>🚀 <strong>Deployments</strong></td>
@@ -1924,13 +1925,28 @@
 </tr>
 <tr>
 <td>🌐 <strong>Redes</strong></td>
-<td><code>list_networks</code>, <code>create_network</code>, <code>delete_network</code></td>
-<td>Administración de redes (incluye internas aisladas)</td>
+<td><code>list_networks</code> (auto-discovery), <code>create_network</code>, <code>delete_network</code></td>
+<td>Descubrimiento automático de topología</td>
 </tr>
 <tr>
 <td>📁 <strong>Proyectos</strong></td>
 <td><code>list_projects</code>, <code>create_project</code>, <code>delete_project</code>, <code>get_project</code></td>
-<td>Organización de recursos por proyectos</td>
+<td>Organización de recursos</td>
+</tr>
+<tr>
+<td>📊 <strong>Monitoring</strong></td>
+<td><code>get_system_stats</code>, <code>get_service_stats</code>, <code>health_check</code>, <code>get_server_ip</code></td>
+<td>Métricas en tiempo real (CPU, RAM, disco)</td>
+</tr>
+<tr>
+<td>⚡ <strong>Scaling</strong></td>
+<td><code>scale_service</code>, <code>auto_scale_service</code></td>
+<td>Escalado vertical y automático con thresholds</td>
+</tr>
+<tr>
+<td>🔒 <strong>Security</strong></td>
+<td><code>list_domains</code>, <code>create_domain</code>, <code>get_public_key</code></td>
+<td>Dominios y autenticación Git</td>
 </tr>
 </tbody>
 </table>
@@ -1956,10 +1972,14 @@
 <div class="card">
 <h4 id="tools-reference">🛠️ Tools Reference<a class="headerlink" href="#tools-reference" title="Permanent link">&para;</a></h4>
 <ul>
-<li><a href="tools/services/">Services Tools</a></li>
-<li><a href="tools/deployments/">Deployments Tools</a></li>
-<li><a href="tools/networks/">Networks Tools</a></li>
-<li><a href="tools/projects/">Projects Tools</a></li>
+<li><a href="tools/overview/">Overview</a> - 30 herramientas en 7 categorías</li>
+<li><a href="tools/services/">Services Tools</a> - 10 herramientas (create, deploy, logs)</li>
+<li><a href="tools/deployments/">Deployments Tools</a> - 4 herramientas</li>
+<li><a href="tools/networks/">Networks Tools</a> - 3 herramientas (auto-discovery)</li>
+<li><a href="tools/projects/">Projects Tools</a> - 4 herramientas</li>
+<li><a href="tools/overview/#monitoring-tools">Monitoring Tools</a> - 4 herramientas (stats, health)</li>
+<li><a href="tools/overview/#scaling-tools">Scaling Tools</a> - 2 herramientas (auto-scale)</li>
+<li><a href="tools/overview/#security-tools">Security Tools</a> - 3 herramientas (domains, Git)</li>
 </ul>
 </div>
 <div class="card">
@@ -1968,6 +1988,15 @@
 <li><a href="examples/basic/">Basic Examples</a></li>
 <li><a href="examples/advanced/">Advanced Workflows</a></li>
 <li><a href="examples/real-world/">Real-World Cases</a></li>
+</ul>
+</div>
+<div class="card">
+<h4 id="advanced-features">🚀 Advanced Features<a class="headerlink" href="#advanced-features" title="Permanent link">&para;</a></h4>
+<ul>
+<li><a href="advanced/features/">Security &amp; Networks</a> - Auth, redes aisladas</li>
+<li><a href="advanced/features/#deployment-features">Deployment Guide</a> - Docker, GitHub, Git</li>
+<li><a href="advanced/features/#debugging-features">Debugging</a> - Logs, diagnóstico</li>
+<li><a href="advanced/features/#auto-scaling-features">Auto-Scaling</a> - Vertical, automático</li>
 </ul>
 </div>
 <div class="card">
@@ -2022,9 +2051,8 @@
 <strong>Danny Maaz</strong><br />
 <em>Ingeniero en Sistemas | Creador de EasyPanel MCP</em>
 
-<a href="https://linkedin.com/in/dannymaaz" rel="noopener" target="_blank">🔗 LinkedIn</a> · 
-<a href="https://github.com/dannymaaz" rel="noopener" target="_blank">💻 GitHub</a> · 
-<a href="mailto:dannymaaz200@gmail.com" rel="noopener" target="_blank">✉️ Email</a>
+<a href="https://linkedin.com/in/dannymaaz" rel="noopener" target="_blank">🔗 LinkedIn</a> ·
+<a href="https://github.com/dannymaaz" rel="noopener" target="_blank">💻 GitHub</a>
 </p>
 <hr />
 <h2 id="apoya-el-proyecto">💙 Apoya el Proyecto<a class="headerlink" href="#apoya-el-proyecto" title="Permanent link">&para;</a></h2>
