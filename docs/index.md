@@ -251,8 +251,10 @@ _Ingeniero en Sistemas | Creador de EasyPanel MCP_
 ## 💙 Apoya el Proyecto
 
 <p align="center" markdown>
-[![Donar con PayPal](https://img.shields.io/badge/Donate-PayPal-00457C?logo=paypal&logoColor=white)](https://www.paypal.me/Creativegt){: target="_blank" rel="noopener" }
+[![Donar con PayPal](https://img.shields.io/badge/Donate-PayPal-00457C?logo=paypal&logoColor=white)](https://www.paypal.me/Creativegt)
+</p>
 
+<p align="center" markdown>
 _🙏 Cada donación ayuda a mantener el proyecto y agregar nuevas features._
 </p>
 
