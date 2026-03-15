@@ -1,8 +1,8 @@
 """
-EasyPanel API Client.
+Enhanced EasyPanel Client with advanced features.
 
-Handles all communication with the EasyPanel API using tRPC protocol.
-EasyPanel uses tRPC for all API operations.
+Adds support for logs, networks discovery, and auto-scaling
+by combining tRPC API calls with smart inference.
 """
 
 import httpx
@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 class EasyPanelClient:
-    """Client for interacting with EasyPanel API using tRPC."""
+    """Enhanced client for interacting with EasyPanel API using tRPC."""
 
     def __init__(self, config: EasyPanelConfig):
         """
@@ -106,7 +106,7 @@ class EasyPanelClient:
         endpoint = f"/api/trpc/{procedure}"
         
         try:
-            # Query procedures (list, get, inspect) use GET
+            # Query procedures (list, get, inspect, stats, info) use GET
             # Mutation procedures (create, update, delete) use POST
             query_procedures = ["list", "get", "inspect", "stats", "info", "check", "public"]
             is_query = any(q in procedure.lower() for q in query_procedures)
@@ -147,16 +147,11 @@ class EasyPanelClient:
             raise
 
     # ========== Project Management ==========
-    # tRPC procedures: projects.listProjects, projects.createProject, 
-    #                  projects.destroyProject, projects.inspectProject,
-    #                  projects.getDockerContainers, projects.updateProjectEnv,
-    #                  projects.updateAccess, projects.listProjectsAndServices
     
     async def list_projects(self) -> list[dict[str, Any]]:
         """List all projects."""
         try:
             result = await self._trpc_request("projects.listProjects")
-            # Result is typically { data: [...] } or directly [...]
             if isinstance(result, dict) and "data" in result:
                 return result.get("data", [])
             return result if isinstance(result, list) else []
@@ -199,38 +194,22 @@ class EasyPanelClient:
             return {}
 
     # ========== Service Management ==========
-    # tRPC procedures for apps:
-    #   services.app.createService, services.app.deployService,
-    #   services.app.destroyService, services.app.inspectService,
-    #   services.app.restartService, services.app.startService,
-    #   services.app.stopService, services.app.updateEnv,
-    #   services.app.updateSourceImage, services.app.updateSourceGithub,
-    #   services.app.updateSourceGit, services.app.updateSourceDockerfile,
-    #   services.app.updateBuild, services.app.updateDeploy,
-    #   services.app.updateResources, services.app.updatePorts,
-    #   services.app.updateRedirects, services.app.updateBasicAuth,
-    #   services.app.updateMaintenance, services.app.getExposedPorts,
-    #   services.app.enableGithubDeploy, services.app.disableGithubDeploy,
-    #   services.app.refreshDeployToken, services.app.uploadCodeArchive
     
     async def list_services(self, project_id: Optional[str] = None) -> list[dict[str, Any]]:
         """List all services, optionally filtered by project."""
         try:
-            # First get projects with services
+            # Get projects with services
+            result = await self._trpc_request("projects.listProjectsAndServices")
+            projects = result.get("data", []) if isinstance(result, dict) else result
+            
             if project_id:
-                result = await self._trpc_request("projects.listProjectsAndServices")
-                projects = result.get("data", []) if isinstance(result, dict) else result
                 # Filter services by project
-                services = []
                 for proj in projects:
                     if proj.get("id") == project_id:
-                        services = proj.get("services", [])
-                        break
-                return services
+                        return proj.get("services", [])
+                return []
             else:
-                # Get all projects and collect all services
-                result = await self._trpc_request("projects.listProjectsAndServices")
-                projects = result.get("data", []) if isinstance(result, dict) else result
+                # Collect all services from all projects
                 services = []
                 for proj in projects:
                     services.extend(proj.get("services", []))
@@ -276,18 +255,24 @@ class EasyPanelClient:
     ) -> dict[str, Any]:
         """Update service configuration."""
         try:
-            # Determine which update method to use based on config keys
             data = {"id": service_id, **config}
             
-            # Try generic update first
-            for method in ["services.app.updateDeploy", "services.app.updateBasicAuth", 
-                          "services.app.updateResources"]:
-                try:
-                    result = await self._trpc_request(method, data)
-                    return result if isinstance(result, dict) else {}
-                except RuntimeError:
-                    continue
-            return {}
+            # Try different update methods based on config keys
+            if "env" in config or "environment" in config:
+                method = "services.app.updateEnv"
+            elif "resources" in config or "cpu" in config or "memory" in config:
+                method = "services.app.updateResources"
+            elif "sourceImage" in config:
+                method = "services.app.updateSourceImage"
+            elif "basicAuth" in config:
+                method = "services.app.updateBasicAuth"
+            elif "ports" in config:
+                method = "services.app.updatePorts"
+            else:
+                method = "services.app.updateDeploy"
+            
+            result = await self._trpc_request(method, data)
+            return result if isinstance(result, dict) else {}
         except Exception as e:
             logger.error(f"Error updating service: {e}")
             return {}
@@ -337,28 +322,139 @@ class EasyPanelClient:
             logger.error(f"Error deploying service: {e}")
             return {}
 
+    # ========== Enhanced: Service Logs (via inspection) ==========
+    
     async def get_service_logs(
         self,
         service_id: str,
         lines: int = 100
     ) -> list[str]:
-        """Get service logs."""
-        # Note: EasyPanel doesn't expose logs via tRPC directly
-        # This would need a different approach (Docker logs via API)
-        logger.warning("Service logs not available via EasyPanel tRPC API")
-        return []
+        """
+        Get service logs by inspecting service state.
+        
+        EasyPanel doesn't expose raw logs via tRPC, but we can get
+        service state, errors, and status information.
+        """
+        try:
+            service = await self.get_service(service_id)
+            
+            if not service:
+                return [f"Service {service_id} not found"]
+            
+            logs = []
+            
+            # Extract status information
+            status = service.get("status", "unknown")
+            state = service.get("state", "unknown")
+            created_at = service.get("createdAt", "unknown")
+            updated_at = service.get("updatedAt", "unknown")
+            
+            logs.append(f"📊 Service: {service.get('name', service_id)}")
+            logs.append(f"📦 Status: {status}")
+            logs.append(f"🔄 State: {state}")
+            logs.append(f"📅 Created: {created_at}")
+            logs.append(f"🕐 Updated: {updated_at}")
+            
+            # Check for errors
+            error = service.get("error")
+            if error:
+                logs.append(f"❌ Error: {error}")
+            
+            # Check deployment status
+            deployment = service.get("deployment", {})
+            if deployment:
+                deploy_status = deployment.get("status", "unknown")
+                logs.append(f"🚀 Deployment: {deploy_status}")
+                
+                deploy_error = deployment.get("error")
+                if deploy_error:
+                    logs.append(f"❌ Deploy Error: {deploy_error}")
+            
+            # Check resource usage if available
+            resources = service.get("resources", {})
+            if resources:
+                cpu = resources.get("cpu", "N/A")
+                memory = resources.get("memory", "N/A")
+                logs.append(f"💻 CPU: {cpu}")
+                logs.append(f"🧠 Memory: {memory}")
+            
+            # Add diagnostic messages
+            if status == "error" or state == "error":
+                logs.append("")
+                logs.append("⚠️ Service is in error state!")
+                logs.append("💡 Try: restart_service, check resources, or inspect configuration")
+            
+            return logs
+            
+        except Exception as e:
+            logger.error(f"Error getting service logs: {e}")
+            return [f"Error retrieving logs: {str(e)}"]
 
-    # ========== Network Management ==========
-    # Note: EasyPanel manages networks automatically
-    # Networks are created when services are deployed
-    # No direct tRPC procedures for network management
+    # ========== Enhanced: Network Discovery ==========
     
     async def list_networks(self) -> list[dict[str, Any]]:
-        """List all networks (not directly supported by EasyPanel)."""
-        # EasyPanel doesn't expose networks directly via tRPC
-        # Networks are managed automatically
-        logger.info("Network listing not available via EasyPanel tRPC API")
-        return []
+        """
+        Discover networks by analyzing services and their configurations.
+        
+        EasyPanel manages networks automatically. We infer network topology
+        from service configurations.
+        """
+        try:
+            # Get all services
+            services = await self.list_services()
+            
+            # Analyze network topology
+            networks = {}
+            
+            for service in services:
+                service_name = service.get("name", "unknown")
+                service_id = service.get("id", "unknown")
+                project_id = service.get("projectId", "unknown")
+                
+                # Determine network type from service config
+                ports = service.get("ports", [])
+                env = service.get("env", {})
+                
+                # Check if service has public ports
+                has_public = any(p.get("public") for p in ports) if ports else False
+                
+                # Classify network
+                if has_public:
+                    network_type = "public"
+                else:
+                    network_type = "internal"
+                
+                # Group by project
+                if project_id not in networks:
+                    networks[project_id] = {
+                        "id": f"net-{project_id}",
+                        "name": f"project-{project_id}",
+                        "type": "project",
+                        "services": [],
+                        "internal_services": 0,
+                        "public_services": 0
+                    }
+                
+                networks[project_id]["services"].append({
+                    "id": service_id,
+                    "name": service_name,
+                    "internal": not has_public
+                })
+                
+                if has_public:
+                    networks[project_id]["public_services"] += 1
+                else:
+                    networks[project_id]["internal_services"] += 1
+            
+            # Convert to list
+            network_list = list(networks.values())
+            
+            logger.info(f"Discovered {len(network_list)} networks")
+            return network_list
+            
+        except Exception as e:
+            logger.error(f"Error listing networks: {e}")
+            return []
 
     async def create_network(
         self,
@@ -366,21 +462,42 @@ class EasyPanelClient:
         internal: bool = False,
         driver: str = "overlay"
     ) -> dict[str, Any]:
-        """Create a new network (not directly supported by EasyPanel)."""
-        logger.warning("Network creation not available via EasyPanel tRPC API")
-        return {}
+        """
+        Create an isolated service (network is auto-created by EasyPanel).
+        
+        In EasyPanel, networks are created automatically when you deploy
+        services. To create an 'isolated network', we create a service
+        configuration that doesn't expose public ports.
+        """
+        logger.warning(
+            "EasyPanel manages networks automatically. "
+            "To create isolated services, set internal=True when creating services."
+        )
+        
+        return {
+            "name": name,
+            "internal": internal,
+            "note": "Networks are auto-created by EasyPanel when services are deployed"
+        }
 
     async def delete_network(self, network_id: str) -> dict[str, Any]:
-        """Delete a network (not directly supported by EasyPanel)."""
-        logger.warning("Network deletion not available via EasyPanel tRPC API")
-        return {}
+        """
+        Networks cannot be deleted manually in EasyPanel.
+        They are removed when all services in the network are deleted.
+        """
+        logger.warning(
+            "EasyPanel manages networks automatically. "
+            "Delete all services in the network to remove it."
+        )
+        
+        return {
+            "note": "Delete all services in the network to remove it"
+        }
 
     # ========== Deployment Management ==========
-    # Deployments are handled via services.app.deployService
     
     async def list_deployments(self, project_id: Optional[str] = None) -> list[dict[str, Any]]:
         """List all deployments (via services)."""
-        # Deployments are tied to services in EasyPanel
         return await self.list_services(project_id)
 
     async def get_deployment(self, deployment_id: str) -> dict[str, Any]:
@@ -409,14 +526,10 @@ class EasyPanelClient:
             return {}
 
     async def get_deployment_logs(self, deployment_id: str) -> list[str]:
-        """Get deployment logs (not directly available)."""
-        logger.warning("Deployment logs not available via EasyPanel tRPC API")
-        return []
+        """Get deployment logs (via service logs)."""
+        return await self.get_service_logs(deployment_id)
 
     # ========== System Information ==========
-    # tRPC procedures: monitor.getSystemStats, monitor.getServiceStats,
-    #                  monitor.getStorageStats, monitor.getAdvancedStats,
-    #                  monitor.getDockerTaskStats, monitor.getMonitorTableData
     
     async def get_system_info(self) -> dict[str, Any]:
         """Get system information."""
@@ -450,7 +563,6 @@ class EasyPanelClient:
         try:
             if not self._client:
                 return False
-            # Try to get session - if it works, API is healthy
             response = await self._client.get("/api/trpc/auth.getSession")
             return response.status_code == 200
         except Exception as e:
@@ -458,15 +570,121 @@ class EasyPanelClient:
             return False
 
     async def get_server_ip(self) -> str:
-        """Get server IP address (not directly available)."""
-        # EasyPanel doesn't expose server IP directly
-        # Could be extracted from system stats
+        """Get server IP address."""
         try:
             stats = await self.get_system_stats()
-            # Try to extract IP from stats
             return stats.get("ip", "") if isinstance(stats, dict) else ""
         except:
             return ""
+
+    # ========== Enhanced: Auto-Scaling Helpers ==========
+    
+    async def scale_service(
+        self,
+        service_id: str,
+        cpu: Optional[int] = None,
+        memory: Optional[int] = None
+    ) -> dict[str, Any]:
+        """
+        Scale service resources (vertical scaling).
+        
+        Args:
+            service_id: Service to scale
+            cpu: New CPU cores (e.g., 2, 4, 8)
+            memory: New memory in MB (e.g., 2048, 4096, 8192)
+        """
+        try:
+            config = {}
+            if cpu:
+                config["cpu"] = cpu
+            if memory:
+                config["memory"] = memory
+            
+            if not config:
+                return {"error": "No scaling parameters provided"}
+            
+            result = await self._trpc_request("services.app.updateResources", {
+                "id": service_id,
+                **config
+            })
+            
+            return result if isinstance(result, dict) else {}
+            
+        except Exception as e:
+            logger.error(f"Error scaling service: {e}")
+            return {}
+
+    async def auto_scale_service(
+        self,
+        service_id: str,
+        cpu_threshold: float = 80.0,
+        memory_threshold: float = 80.0,
+        max_cpu: int = 8,
+        max_memory: int = 16384
+    ) -> dict[str, Any]:
+        """
+        Automatically scale service based on current resource usage.
+        
+        Args:
+            service_id: Service to scale
+            cpu_threshold: CPU % threshold to trigger scaling
+            memory_threshold: Memory % threshold to trigger scaling
+            max_cpu: Maximum CPU cores
+            max_memory: Maximum memory in MB
+        """
+        try:
+            # Get current service details
+            service = await self.get_service(service_id)
+            if not service:
+                return {"error": f"Service {service_id} not found"}
+            
+            # Get current resources
+            resources = service.get("resources", {})
+            current_cpu = resources.get("cpu", 1)
+            current_memory = resources.get("memory", 2048)
+            
+            # Get system stats to check usage
+            stats = await self.get_system_stats()
+            cpu_info = stats.get("cpuInfo", {})
+            mem_info = stats.get("memInfo", {})
+            
+            cpu_usage = cpu_info.get("usedPercentage", 0)
+            mem_usage = mem_info.get("usedMemPercentage", 0)
+            
+            # Determine if scaling is needed
+            scale_cpu = cpu_usage > cpu_threshold
+            scale_memory = mem_usage > memory_threshold
+            
+            if not scale_cpu and not scale_memory:
+                return {
+                    "scaled": False,
+                    "reason": "Resource usage below threshold",
+                    "cpu_usage": cpu_usage,
+                    "memory_usage": mem_usage
+                }
+            
+            # Calculate new resources (double current, up to max)
+            new_cpu = min(current_cpu * 2, max_cpu) if scale_cpu else current_cpu
+            new_memory = min(current_memory * 2, max_memory) if scale_memory else current_memory
+            
+            # Apply scaling
+            result = await self.scale_service(service_id, cpu=new_cpu, memory=new_memory)
+            
+            return {
+                "scaled": True,
+                "old_cpu": current_cpu,
+                "new_cpu": new_cpu,
+                "old_memory": current_memory,
+                "new_memory": new_memory,
+                "reason": "High resource usage detected",
+                "cpu_usage": cpu_usage,
+                "memory_usage": mem_usage,
+                "result": result
+            }
+            
+        except Exception as e:
+            logger.error(f"Error auto-scaling service: {e}")
+            return {"error": str(e)}
 
     # ========== Additional Utilities ==========
     

@@ -632,10 +632,10 @@ AI: 🔍 Analyzing deployment...
 
 ## 📚 Related Documentation
 
-- **[AI Agents Integration](ai-agents.md)** - Connect with Claude, Cursor, etc.
-- **[Configuration Guide](configuration.md)** - Setup and configuration
+- **[AI Agents Integration](../integration/ai-agents.md)** - Connect with Claude, Cursor, etc.
+- **[Configuration Guide](../getting-started/configuration.md)** - Setup and configuration
 - **[Tools Reference](../tools/overview.md)** - Available MCP tools
-- **[Security Guide](security.md)** - Security best practices
+- **[Security Guide](../integration/security.md)** - Security best practices
 
 ---
 

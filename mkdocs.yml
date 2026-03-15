@@ -157,9 +157,6 @@ nav:
     - Security: integration/security.md
   - Advanced Features:
     - Security & Networks: advanced/features.md
-    - Deployment: advanced/deployment.md
-    - Debugging: advanced/debugging.md
-    - Auto-Scaling: advanced/scaling.md
   - Examples:
     - Basic Examples: examples/basic.md
     - Advanced Workflows: examples/advanced.md

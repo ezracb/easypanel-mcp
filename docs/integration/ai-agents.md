@@ -446,8 +446,8 @@ If configured correctly, you should see your projects listed.
 
 ## 📚 Additional Resources
 
-- **[Installation Guide](installation.md)** - Setup EasyPanel MCP
-- **[Configuration Guide](configuration.md)** - Configuration options
+- **[Installation Guide](../getting-started/installation.md)** - Setup EasyPanel MCP
+- **[Configuration Guide](../getting-started/configuration.md)** - Configuration options
 - **[Tools Reference](../tools/overview.md)** - Available tools
 - **[MCP Specification](https://modelcontextprotocol.io/)** - Official MCP docs
 
