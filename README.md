@@ -32,11 +32,14 @@
 
 - ✅ **Control Total por Voz/Texto**: "Despliega mi API Flask con PostgreSQL"
 - ✅ **Multi-Plataforma**: Funciona en Windows, macOS y Linux
-- ✅ **Fácil Integración**: Compatible con Claude Desktop, n8n, y cualquier cliente MCP
-- ✅ **Redes Aisladas**: Soporte para redes internas Docker seguras
-- ✅ **Auto-Scaling**: Escala servicios basado en demanda detectada por IA
-- ✅ **Debugging Asistido**: La IA puede analizar logs y diagnosticar problemas
+- ✅ **Fácil Integración**: Compatible con Claude Desktop, Cursor, Cline, n8n, y cualquier cliente MCP
+- ✅ **Redes Aisladas**: Soporte para redes internas Docker seguras (auto-descubrimiento)
+- ✅ **Auto-Scaling**: Escala servicios basado en demanda con umbrales configurables
+- ✅ **Debugging Asistido**: La IA puede analizar logs, diagnosticar problemas y sugerir soluciones
 - ✅ **GitHub Actions**: Trigger de deployments automáticos desde tu repositorio
+- ✅ **Service Logs**: Obtención inteligente de logs vía inspección de servicio
+- ✅ **Network Discovery**: Descubrimiento automático de topología de redes
+- ✅ **Resource Monitoring**: Monitoreo en tiempo real de CPU, memoria y disco
 
 ---
 
@@ -105,9 +108,11 @@ IA: 🚀 Creando proyecto 'api-flask-prod'
 
 ```
 IA (monitoreando): "Detecto un incremento del 300% en tráfico hacia el servicio worker"
-IA (acción): 🔄 Escalando servicio 'worker' de 2 a 6 réplicas
-   ⏱️ Tiempo de respuesta: 3.2 segundos
-   💰 Costo estimado adicional: $0.15/hora
+IA (acción): 🔄 Escalando servicio 'worker' automáticamente
+   📊 CPU usage: 95% → threshold 80% superado
+   💾 Memory: 7.2GB / 8GB → threshold 90% superado
+   📈 Escalando: CPU 2 → 4 cores, RAM 8GB → 16GB
+   ⏱️ Tiempo de respuesta: 2.1 segundos
 ```
 
 ### ✅ Debugging Asistido
@@ -115,14 +120,28 @@ IA (acción): 🔄 Escalando servicio 'worker' de 2 a 6 réplicas
 ```
 Usuario: "¿Por qué falla el servicio worker?"
 IA: 🔍 Analizando logs del servicio 'worker'...
+
+   📊 Service Status:
+   - Status: error
+   - State: crashed
+   - Deployment: failed
    
    ❌ Error encontrado: ConnectionRefusedError - No se puede conectar a Redis
    📋 Últimos logs:
      - "Attempting to connect to redis:6379..."
      - "Connection timeout after 30s"
+     - "Retry 1/3 failed"
+
+   💡 Solución sugerida: El servicio Redis no está corriendo.
+   Diagnóstico:
+   - Redis service: stopped
+   - Puerto 6379: no listening
+   - Network: internal-net (OK)
    
-   💡 Solución sugerida: El servicio Redis no está corriendo. 
-   ¿Quieres que inicie el servicio 'redis-cache'?
+   ¿Quieres que:
+   1. Inicie el servicio 'redis-cache'?
+   2. Reconfigure la conexión?
+   3. Escale los recursos de Redis?
 ```
 
 ### ✅ Prototipado Rápido
@@ -133,8 +152,32 @@ IA: 🎨 Creando entorno de staging...
    ✅ Proyecto 'myapp-staging' creado
    ✅ Servicio 'app' desplegado con imagen myapp:v2.0.0-beta
    ✅ Base de datos 'staging_db' inicializada
+   🔗 Red interna: staging-net (isolated)
    🔗 URL: https://staging.myapp.com
    ⏱️ Tiempo total: 45 segundos
+```
+
+### ✅ Monitoreo en Tiempo Real
+
+```
+Usuario: "¿Cómo está el rendimiento de mi servicio?"
+IA: 📊 Analizando métricas en tiempo real...
+
+   System Stats (últimos 5 min):
+   - CPU: 45% average, 78% peak
+   - Memory: 4.2GB / 8GB (52%)
+   - Disk: 29.7GB / 309.9GB (9.6%)
+   - Network: 1.2GB in, 3.4GB out
+   
+   Service Health:
+   - api-service: ✅ healthy (99.9% uptime)
+   - worker: ✅ healthy
+   - postgres-db: ✅ healthy
+   
+   💡 Recomendación: Todo funcionando correctamente
+   Próximas acciones sugeridas:
+   - Programar backup en 2 horas
+   - Actualizar certificado SSL en 15 días
 ```
 
 ---
@@ -227,33 +270,61 @@ jobs:
 
 | Categoría | Herramientas | Descripción |
 |-----------|--------------|-------------|
-| 📦 **Servicios** | `list_services`, `create_service`, `update_service`, `delete_service`, `restart_service`, `get_service_logs` | Gestión completa de servicios Docker |
+| 📦 **Servicios** | `list_services`, `get_service`, `create_service`, `update_service`, `delete_service`, `restart_service`, `start_service`, `stop_service`, `deploy_service`, `get_service_logs` | Gestión completa + logs inteligentes |
 | 🚀 **Deployments** | `list_deployments`, `create_deployment`, `get_deployment`, `get_deployment_logs` | Control de deployments y versiones |
-| 🌐 **Redes** | `list_networks`, `create_network`, `delete_network` | Administración de redes (incluye redes internas aisladas) |
-| 📁 **Proyectos** | `list_projects`, `create_project`, `delete_project`, `get_project` | Organización de recursos por proyectos |
+| 🌐 **Redes** | `list_networks` (auto-discovery), `create_network`, `delete_network` | Descubrimiento automático de topología |
+| 📁 **Proyectos** | `list_projects`, `create_project`, `delete_project`, `get_project` | Organización de recursos |
+| 📊 **Monitoring** | `get_system_stats`, `get_service_stats`, `health_check`, `get_server_ip` | Métricas en tiempo real |
+| ⚡ **Scaling** | `scale_service`, `auto_scale_service` | Escalado vertical y automático |
+| 🔒 **Security** | `list_domains`, `create_domain`, `get_public_key` | Dominios y autenticación Git |
+
+**Total: 25+ herramientas** disponibles para gestionar tu infraestructura con IA.
 
 ---
 
 ## 🔒 Seguridad y Redes Aisladas
 
-EasyPanel MCP soporta la creación de **redes internas Docker** para aislar servicios sensibles:
+### 🔐 Autenticación y Seguridad
+
+EasyPanel MCP soporta **dos métodos de autenticación**:
+
+1. **API Key (Recomendado)**: Más seguro, rotación fácil
+2. **Email:Password**: Alternativa sin generar keys
+
+### 🌐 Redes Aisladas (Auto-Discovery)
+
+EasyPanel MCP ahora incluye **descubrimiento automático de redes** analizando la topología de servicios:
+
+```python
+# La IA puede descubrir redes automáticamente
+networks = await client.list_networks()
+
+# Resultado:
+# - project-net (public): 3 servicios expuestos
+# - project-net-internal (private): 2 servicios aislados
+```
+
+**Características:**
+- ✅ **Detección automática**: Clasifica servicios como públicos o internos
+- ✅ **Sin configuración manual**: EasyPanel gestiona redes automáticamente
+- ✅ **Aislamiento seguro**: Servicios sin puertos públicos = aislados
+
+### Ejemplo de Configuración
 
 ```yaml
-# En tu docker-compose.yml
-networks:
-  internal-net:
-    driver: overlay
-    internal: true  # ← Red aislada sin acceso a internet
+# Servicio Público (accesible desde internet)
+api-service:
+  image: myapp/api:latest
+  ports:
+    - "8080:8080"  # Puerto público
+  # → Clasificado como: PUBLIC
 
-services:
-  api:
-    networks:
-      - internal-net  # Solo accesible internamente
-      - public-net    # Para servicios que necesitan internet
-  
-  database:
-    networks:
-      - internal-net  # Base de datos completamente aislada
+# Servicio Interno (aislado)
+postgres-db:
+  image: postgres:15
+  ports: []  # Sin puertos públicos
+  # → Clasificado como: INTERNAL
+  # → Solo accesible por otros servicios en el mismo proyecto
 ```
 
 ---
@@ -273,7 +344,23 @@ Incluye:
 
 ---
 
-## 🧪 Testing
+## 🧪 Testing y Verificación
+
+### Verificar Conexión
+
+```bash
+# Ejecutar script de test (solo lectura, sin cambios)
+python test_connection.py
+
+# Expected output:
+# ✅ Connected successfully!
+# ✅ Found 3 project(s)
+# ✅ Found 0 service(s)
+# ✅ System info retrieved
+# ✅ ALL TESTS PASSED
+```
+
+### Tests Unitarios
 
 ```bash
 # Instalar dependencias de desarrollo
@@ -284,6 +371,28 @@ pytest
 
 # Con coverage
 pytest --cov=src --cov-report=html
+```
+
+### Verificar Configuración
+
+```bash
+# Test de configuración
+python -c "from config import config; print('Config OK')"
+
+# Test de conexión directa
+python -c "
+import asyncio
+from src.client import EasyPanelClient
+from config import config
+
+async def test():
+    client = EasyPanelClient(config.easypanel)
+    await client.connect()
+    print('EasyPanel healthy:', await client.health_check())
+    await client.disconnect()
+
+asyncio.run(test())
+"
 ```
 
 ---
