@@ -51,4 +51,12 @@ htmlcov/
 
 # mypy
 .mypy_cache/
-"_site/"  
+"_site/"
+
+# Private Markdown and sensitive files
+context.md
+notes.md
+PROJECT_SUMMARY.md
+GITHUB_PUBLISH_GUIDE.md
+private/
+.gemini/
