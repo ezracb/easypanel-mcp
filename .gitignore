@@ -38,6 +38,7 @@ env/
 
 # Documentation
 site/
+.cache/
 *.log
 
 # OS
