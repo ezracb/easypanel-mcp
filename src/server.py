@@ -128,8 +128,6 @@ class MCPServer:
         params = message.get("params", {})
         msg_id = message.get("id")
         
-        logger.debug(f"Received method: {method}")
-        
         try:
             if method == "initialize":
                 return {
@@ -138,9 +136,8 @@ class MCPServer:
                     "result": {
                         "protocolVersion": "2024-11-05",
                         "capabilities": {
-                            "tools": {
-                                "list": True
-                            }
+                            "tools": {},
+                            "resources": {}
                         },
                         "serverInfo": {
                             "name": "easypanel-mcp",
@@ -193,7 +190,7 @@ class MCPServer:
                         "message": f"Method not found: {method}"
                     }
                 }
-        
+                
         except Exception as e:
             logger.error(f"Error handling message: {e}")
             return {
@@ -204,104 +201,44 @@ class MCPServer:
                     "message": str(e)
                 }
             }
-    
-    async def run_stdio(self) -> None:
-        """Run server using stdio transport."""
-        logger.info("Starting MCP server with stdio transport")
+
+    async def run(self) -> None:
+        """Run the MCP server (STDIO transport)."""
+        await self.initialize()
         self._running = True
         
-        reader = asyncio.StreamReader()
-        protocol = asyncio.StreamReaderProtocol(reader)
-        await asyncio.get_event_loop().connect_read_pipe(lambda: protocol, sys.stdin)
-        
-        writer = await asyncio.open_connection(sys.stdout, sys.stdout)
+        logger.info("MCP server running on STDIO")
         
         while self._running:
             try:
-                line = await reader.readline()
+                # Read line from stdin
+                line = await asyncio.get_event_loop().run_in_executor(
+                    None, sys.stdin.readline
+                )
+                
                 if not line:
                     break
                 
-                message = json.loads(line.decode())
-                response = await self.handle_message(message)
+                # Parse message
+                message = json.loads(line)
                 
-                writer.write(json.dumps(response).encode() + b"\n")
-                await writer.drain()
-            
-            except json.JSONDecodeError as e:
-                logger.error(f"Invalid JSON: {e}")
-            except Exception as e:
-                logger.error(f"Error processing message: {e}")
-        
-        writer.close()
-        await writer.wait_closed()
-    
-    async def run_http(self) -> None:
-        """Run server using HTTP transport."""
-        logger.info(f"Starting MCP server with HTTP transport on {config.server.host}:{config.server.port}")
-        
-        from aiohttp import web
-        
-        async def handle_request(request: web.Request) -> web.Response:
-            try:
-                message = await request.json()
+                # Handle message and send response
                 response = await self.handle_message(message)
-                return web.json_response(response)
+                print(json.dumps(response), flush=True)
+                
+            except json.JSONDecodeError:
+                logger.error("Failed to parse message")
             except Exception as e:
-                logger.error(f"HTTP request error: {e}")
-                return web.json_response(
-                    {"error": str(e)},
-                    status=500
-                )
+                logger.error(f"Error in server loop: {e}")
+                if not self._running:
+                    break
         
-        app = web.Application()
-        app.router.add_post("/mcp", handle_request)
-        app.router.add_post("/", handle_request)
-        
-        runner = web.AppRunner(app)
-        await runner.setup()
-        
-        site = web.TCPSite(
-            runner,
-            config.server.host,
-            config.server.port
-        )
-        await site.start()
-        
-        self._running = True
-        
-        try:
-            while self._running:
-                await asyncio.sleep(1)
-        except asyncio.CancelledError:
-            pass
-        finally:
-            await runner.cleanup()
-
-
-async def main() -> None:
-    """Main entry point."""
-    server = MCPServer()
-    
-    try:
-        await server.initialize()
-        
-        # Determine transport mode
-        transport = sys.argv[1] if len(sys.argv) > 1 else "stdio"
-        
-        if transport == "http":
-            await server.run_http()
-        else:
-            await server.run_stdio()
-    
-    except KeyboardInterrupt:
-        logger.info("Received interrupt signal")
-    except Exception as e:
-        logger.error(f"Server error: {e}")
-        raise
-    finally:
-        await server.shutdown()
+        await self.shutdown()
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    server = MCPServer()
+    try:
+        asyncio.run(server.run())
+    except KeyboardInterrupt:
+        pass

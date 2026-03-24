@@ -84,6 +84,24 @@ class ProjectsTools:
                     },
                     "required": ["project_id"]
                 }
+            },
+            {
+                "name": "trpc_call",
+                "description": "Call a raw tRPC procedure (DEBUG only)",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "procedure": {
+                            "type": "string",
+                            "description": "Procedure name"
+                        },
+                        "input": {
+                            "type": "object",
+                            "description": "Input parameters"
+                        }
+                    },
+                    "required": ["procedure"]
+                }
             }
         ]
     
@@ -138,6 +156,11 @@ class ProjectsTools:
                     "data": result,
                     "message": f"Project {project_id} deleted successfully"
                 }
+            
+            elif name == "trpc_call":
+                procedure = arguments.get("procedure")
+                input_data = arguments.get("input")
+                return await self.client._trpc_request(procedure, input_data)
             
             else:
                 return {
