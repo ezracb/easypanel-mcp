@@ -1,8 +1,8 @@
 """
 EasyPanel MCP Server.
 
-Low-level implementation using mcp.server.Server for maximum control.
-Supports SSE and STDIO transports.
+Final stabilized implementation using Starlette lifespan and uvicorn.run.
+Ensures the process remains active in containerized environments.
 """
 
 import asyncio
@@ -11,6 +11,7 @@ import logging
 import os
 import sys
 from typing import Any, Optional
+from contextlib import asynccontextmanager
 
 import uvicorn
 from starlette.applications import Starlette
@@ -82,6 +83,7 @@ class MCPServer:
             ]
 
     async def initialize(self) -> None:
+        logger.info("Initializing MCP Server components...")
         config.validate()
         self.client = EasyPanelClient(config.easypanel)
         await self.client.connect()
@@ -91,9 +93,15 @@ class MCPServer:
             "networks": NetworksTools(self.client),
             "projects": ProjectsTools(self.client)
         }
-        logger.info("Server initialized successfully")
+        logger.info("MCP Server initialization complete")
+
+    async def shutdown(self) -> None:
+        if self.client:
+            await self.client.disconnect()
+            logger.info("EasyPanel client disconnected")
 
     async def run_stdio(self) -> None:
+        """Run the server using STDIO transport."""
         await self.initialize()
         from mcp.server.stdio import stdio_server
         async with stdio_server() as (read_stream, write_stream):
@@ -110,42 +118,54 @@ class MCPServer:
                 ),
             )
 
-    async def run_sse(self, host: str, port: int) -> None:
-        await self.initialize()
-        sse = SseServerTransport("/messages")
+server_instance = MCPServer()
+sse_transport = SseServerTransport("/messages")
 
-        async def handle_sse(request):
-            async with sse.connect_sse(request.scope, request.receive, request._send) as (read_stream, write_stream):
-                await self.mcp_server.run(
-                    read_stream,
-                    write_stream,
-                    InitializationOptions(
-                        server_name="easypanel-remote",
-                        server_version="1.0.0",
-                        capabilities=self.mcp_server.get_capabilities(
-                            notification_options=InitializationOptions().capabilities.notifications,
-                            experimental_capabilities=InitializationOptions().capabilities.experimental,
-                        ),
-                    ),
-                )
+@asynccontextmanager
+async def lifespan(app: Starlette):
+    """Manage server lifecycle."""
+    await server_instance.initialize()
+    yield
+    await server_instance.shutdown()
 
-        app = Starlette(
-            routes=[
-                Route("/sse", endpoint=handle_sse),
-                Mount("/messages", app=sse.handle_post_message),
-            ],
+async def handle_sse(request):
+    """Handle SSE connection requests."""
+    async with sse_transport.connect_sse(request.scope, request.receive, request._send) as (read_stream, write_stream):
+        await server_instance.mcp_server.run(
+            read_stream,
+            write_stream,
+            InitializationOptions(
+                server_name="easypanel-remote",
+                server_version="1.0.0",
+                capabilities=server_instance.mcp_server.get_capabilities(
+                    notification_options=InitializationOptions().capabilities.notifications,
+                    experimental_capabilities=InitializationOptions().capabilities.experimental,
+                ),
+            ),
         )
-        
-        logger.info(f"Starting MCP server on SSE at {host}:{port}")
-        config_uvicorn = uvicorn.Config(app, host=host, port=port, log_level="info")
-        server = uvicorn.Server(config_uvicorn)
-        await server.serve()
+
+# Define the web application
+app = Starlette(
+    lifespan=lifespan,
+    routes=[
+        Route("/sse", endpoint=handle_sse),
+        Mount("/messages", app=sse_transport.handle_post_message),
+    ],
+)
 
 if __name__ == "__main__":
+    # Get configuration
     port = int(os.environ.get("PORT", 8080))
     host = os.environ.get("MCP_HOST", "0.0.0.0")
-    server = MCPServer()
+    
+    # Check transport mode
+    mode = "stdio"
     if len(sys.argv) > 1 and sys.argv[1] in ["http", "sse"]:
-        asyncio.run(server.run_sse(host, port))
+        mode = "sse"
+    
+    if mode == "sse":
+        logger.info(f"Starting MCP server on SSE (Host: {host}, Port: {port})")
+        uvicorn.run(app, host=host, port=port, log_level="info")
     else:
-        asyncio.run(server.run_stdio())
+        logger.info("Starting MCP server on STDIO")
+        asyncio.run(server_instance.run_stdio()) # Re-implement if needed or use previous simplified block
