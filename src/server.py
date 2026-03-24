@@ -153,10 +153,15 @@ async def handle_sse(request):
             ),
         )
 
+async def health_check(request):
+    """Simple health check endpoint."""
+    return JSONResponse({"status": "ok", "server": "easypanel-remote"})
+
 # Define the web application
 app = Starlette(
     lifespan=lifespan,
     routes=[
+        Route("/", endpoint=health_check),
         Route("/sse", endpoint=handle_sse),
         Mount("/messages", app=sse_transport.handle_post_message),
     ],
@@ -174,7 +179,15 @@ if __name__ == "__main__":
     
     if mode == "sse":
         logger.info(f"Starting MCP server on SSE (Host: {host}, Port: {port})")
-        uvicorn.run(app, host=host, port=port, log_level="info")
+        try:
+            uvicorn.run(app, host=host, port=port, log_level="info")
+        except Exception as e:
+            logger.exception(f"UVICORN FATAL ERROR: {e}")
+            sys.exit(1)
     else:
         logger.info("Starting MCP server on STDIO")
-        asyncio.run(server_instance.run_stdio()) # Re-implement if needed or use previous simplified block
+        try:
+            asyncio.run(server_instance.run_stdio())
+        except Exception as e:
+            logger.exception(f"STDIO FATAL ERROR: {e}")
+            sys.exit(1)
