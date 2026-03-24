@@ -18,13 +18,16 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY src/ ./src/
 COPY config.py .
 
-# Environment variables (to be provided at runtime)
+# Environment variables
+ENV PYTHONPATH=/app
 ENV EASYPANEL_URL=""
 ENV EASYPANEL_API_KEY=""
 ENV PORT=8080
+ENV MCP_HOST=0.0.0.0
 
 # Expose port
 EXPOSE 8080
 
 # Run the server in HTTP mode for remote access
-CMD ["python", "src/server.py", "http"]
+# Using -u to ensure logs are flushed immediately
+CMD ["python", "-u", "src/server.py", "http"]
