@@ -115,10 +115,10 @@ class MCPServer:
         sse = SseServerTransport("/messages")
 
         async def handle_sse(request):
-            async with sse.connect_scope(request.scope, request.receive, request._send):
+            async with sse.connect_sse(request.scope, request.receive, request._send) as (read_stream, write_stream):
                 await self.mcp_server.run(
-                    sse.read_stream,
-                    sse.write_stream,
+                    read_stream,
+                    write_stream,
                     InitializationOptions(
                         server_name="easypanel-remote",
                         server_version="1.0.0",
