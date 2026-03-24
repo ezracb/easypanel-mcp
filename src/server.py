@@ -27,37 +27,36 @@ mcp = FastMCP("easypanel-remote")
 # Initialize client
 client = EasyPanelClient(config.easypanel)
 
-# Lifecycle management
-@mcp.on_startup()
-async def startup():
-    logger.info("Connecting to EasyPanel API...")
-    await client.connect()
-
-@mcp.on_shutdown()
-async def shutdown():
-    logger.info("Disconnecting from EasyPanel API...")
-    await client.disconnect()
+async def ensure_connected():
+    """Ensure the client is connected to EasyPanel."""
+    if client._client is None:
+        logger.info("Connecting to EasyPanel API...")
+        await client.connect()
 
 # ========== Projects ==========
 
 @mcp.tool()
 async def list_projects() -> list[dict[str, Any]]:
     """List all projects in Easypanel with their basic metadata."""
+    await ensure_connected()
     return await client.list_projects()
 
 @mcp.tool()
 async def get_project(project_id: str) -> dict[str, Any]:
     """Get detailed information about a specific project."""
+    await ensure_connected()
     return await client.get_project(project_id)
 
 @mcp.tool()
 async def create_project(name: str, description: Optional[str] = None) -> dict[str, Any]:
     """Create a new project in EasyPanel."""
+    await ensure_connected()
     return await client.create_project(name, description)
 
 @mcp.tool()
 async def delete_project(project_id: str) -> dict[str, Any]:
     """Delete a project from EasyPanel."""
+    await ensure_connected()
     return await client.delete_project(project_id)
 
 # ========== Services ==========
@@ -65,26 +64,31 @@ async def delete_project(project_id: str) -> dict[str, Any]:
 @mcp.tool()
 async def list_services(project_id: Optional[str] = None) -> list[dict[str, Any]]:
     """List all services in EasyPanel, optionally filtered by project."""
+    await ensure_connected()
     return await client.list_services(project_id)
 
 @mcp.tool()
 async def get_service(service_id: str) -> dict[str, Any]:
     """Get detailed information about a specific service."""
+    await ensure_connected()
     return await client.get_service(service_id)
 
 @mcp.tool()
 async def create_service(name: str, project_id: str, image: str, config: Optional[dict[str, Any]] = None) -> dict[str, Any]:
     """Create a new service in EasyPanel (app type)."""
+    await ensure_connected()
     return await client.create_service(name, project_id, image, config)
 
 @mcp.tool()
 async def restart_service(service_id: str) -> dict[str, Any]:
     """Restart a service."""
+    await ensure_connected()
     return await client.restart_service(service_id)
 
 @mcp.tool()
 async def deploy_service(service_id: str) -> dict[str, Any]:
     """Trigger a redeployment of a specific service."""
+    await ensure_connected()
     return await client.deploy_service(service_id)
 
 # ========== Low-level API Access ==========
@@ -92,6 +96,7 @@ async def deploy_service(service_id: str) -> dict[str, Any]:
 @mcp.tool()
 async def trpc_call(procedure: str, input_data: Optional[dict[str, Any]] = None, method: str = "POST") -> Any:
     """Make a raw tRPC call to the Easypanel API for advanced operations."""
+    await ensure_connected()
     return await client._trpc_request(procedure, input_data, method)
 
 if __name__ == "__main__":
