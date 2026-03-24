@@ -22,11 +22,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Initialize FastMCP
-mcp = FastMCP(
-    "easypanel-remote",
-    title="EasyPanel Remote Management",
-    description="Interface for managing Easypanel projects, services, and deployments",
-)
+mcp = FastMCP("easypanel-remote")
 
 # Initialize client
 client = EasyPanelClient(config.easypanel)
