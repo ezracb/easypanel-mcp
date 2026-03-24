@@ -84,16 +84,20 @@ class MCPServer:
 
     async def initialize(self) -> None:
         logger.info("Initializing MCP Server components...")
-        config.validate()
-        self.client = EasyPanelClient(config.easypanel)
-        await self.client.connect()
-        self.tools = {
-            "services": ServicesTools(self.client),
-            "deployments": DeploymentsTools(self.client),
-            "networks": NetworksTools(self.client),
-            "projects": ProjectsTools(self.client)
-        }
-        logger.info("MCP Server initialization complete")
+        try:
+            config.validate()
+            self.client = EasyPanelClient(config.easypanel)
+            await self.client.connect()
+            self.tools = {
+                "services": ServicesTools(self.client),
+                "deployments": DeploymentsTools(self.client),
+                "networks": NetworksTools(self.client),
+                "projects": ProjectsTools(self.client)
+            }
+            logger.info("MCP Server initialization complete")
+        except Exception as e:
+            logger.exception(f"CRITICAL: Failed to initialize MCP Server: {e}")
+            raise
 
     async def shutdown(self) -> None:
         if self.client:
@@ -124,9 +128,14 @@ sse_transport = SseServerTransport("/messages")
 @asynccontextmanager
 async def lifespan(app: Starlette):
     """Manage server lifecycle."""
-    await server_instance.initialize()
-    yield
-    await server_instance.shutdown()
+    try:
+        await server_instance.initialize()
+        yield
+    except Exception as e:
+        logger.exception(f"LIFESPAN ERROR: {e}")
+        raise
+    finally:
+        await server_instance.shutdown()
 
 async def handle_sse(request):
     """Handle SSE connection requests."""
