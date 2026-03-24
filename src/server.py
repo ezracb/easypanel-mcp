@@ -157,7 +157,7 @@ class MCPServer:
             debug=True,
             routes=[
                 Route("/sse", endpoint=handle_sse),
-                Mount("/messages", app=sse.handle_post_resource),
+                Mount("/messages", app=sse.handle_post_message),
             ],
         )
         
