@@ -1,188 +1,112 @@
 """
 EasyPanel MCP Server.
 
-Main server implementation using the Model Context Protocol (MCP).
+Main server implementation using FastMCP for robust transport handling.
 Provides AI agents with tools to manage EasyPanel infrastructure.
 """
 
-import asyncio
-import json
 import logging
 import os
 import sys
 from typing import Any, Optional
 
-import uvicorn
-from starlette.applications import Starlette
-from starlette.routing import Route, Mount
-from starlette.responses import JSONResponse
-
-from mcp.server import Server
-from mcp.server.models import InitializationOptions
-from mcp.server.sse import SseServerTransport
-
+from mcp.server.fastmcp import FastMCP
 from config import config
 from src.client import EasyPanelClient
-from src.tools import (
-    ServicesTools,
-    DeploymentsTools,
-    NetworksTools,
-    ProjectsTools
-)
 
 # Configure logging
 logging.basicConfig(
-    level=getattr(logging, config.server.log_level),
+    level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
-class MCPServer:
-    """
-    MCP Server for EasyPanel.
-    """
-    
-    def __init__(self):
-        """Initialize MCP server."""
-        self.client: Optional[EasyPanelClient] = None
-        self.tools: dict[str, Any] = {}
-        self.mcp_server = Server("easypanel-mcp")
-        self._setup_handlers()
-    
-    def _setup_handlers(self):
-        """Setup MCP protocol handlers."""
-        
-        @self.mcp_server.list_tools()
-        async def handle_list_tools() -> list:
-            """List all available tools."""
-            definitions = []
-            for tool_module in self.tools.values():
-                definitions.extend(tool_module.get_tool_definitions())
-            
-            # Format according to SDK expectations
-            from mcp.types import Tool, TextContent
-            return [
-                Tool(
-                    name=t["name"],
-                    description=t["description"],
-                    inputSchema=t["inputSchema"]
-                ) for t in definitions
-            ]
+# Initialize FastMCP
+mcp = FastMCP(
+    "easypanel-remote",
+    title="EasyPanel Remote Management",
+    description="Interface for managing Easypanel projects, services, and deployments",
+)
 
-        @self.mcp_server.call_tool()
-        async def handle_call_tool(name: str, arguments: dict | None) -> list:
-            """Execute a tool."""
-            # Determine which tool module to use
-            tool_module = None
-            for module in self.tools.values():
-                if any(t["name"] == name for t in module.get_tool_definitions()):
-                    tool_module = module
-                    break
-            
-            if not tool_module:
-                raise ValueError(f"Unknown tool: {name}")
-            
-            result = await tool_module.execute(name, arguments or {})
-            
-            from mcp.types import TextContent
-            return [
-                TextContent(
-                    type="text",
-                    text=json.dumps(result, indent=2)
-                )
-            ]
+# Initialize client
+client = EasyPanelClient(config.easypanel)
 
-    async def initialize(self) -> None:
-        """Initialize server and connect to EasyPanel."""
-        logger.info("Initializing EasyPanel MCP Server...")
-        
-        # Validate configuration
-        config.validate()
-        
-        # Initialize EasyPanel client
-        self.client = EasyPanelClient(config.easypanel)
-        await self.client.connect()
-        
-        # Initialize tools
-        self.tools = {
-            "services": ServicesTools(self.client),
-            "deployments": DeploymentsTools(self.client),
-            "networks": NetworksTools(self.client),
-            "projects": ProjectsTools(self.client)
-        }
-        
-        logger.info("Server initialized successfully")
+# Lifecycle management
+@mcp.on_startup()
+async def startup():
+    logger.info("Connecting to EasyPanel API...")
+    await client.connect()
 
-    async def run_stdio(self) -> None:
-        """Run the MCP server using STDIO transport."""
-        await self.initialize()
-        from mcp.server.stdio import stdio_server
-        
-        async with stdio_server() as (read_stream, write_stream):
-            await self.mcp_server.run(
-                read_stream,
-                write_stream,
-                InitializationOptions(
-                    server_name="easypanel-mcp",
-                    server_version="1.0.0",
-                    capabilities=self.mcp_server.get_capabilities(
-                        notification_options=InitializationOptions().capabilities.notifications,
-                        experimental_capabilities=InitializationOptions().capabilities.experimental,
-                    ),
-                ),
-            )
+@mcp.on_shutdown()
+async def shutdown():
+    logger.info("Disconnecting from EasyPanel API...")
+    await client.disconnect()
 
-    async def run_sse(self, host: str = "0.0.0.0", port: int = 8080) -> None:
-        """Run the MCP server using SSE transport."""
-        await self.initialize()
-        
-        sse = SseServerTransport("/messages")
+# ========== Projects ==========
 
-        async def handle_sse(request):
-            async with sse.connect_scope(request.scope, request.receive, request._send):
-                await self.mcp_server.run(
-                    sse.read_stream,
-                    sse.write_stream,
-                    InitializationOptions(
-                        server_name="easypanel-mcp",
-                        server_version="1.0.0",
-                        capabilities=self.mcp_server.get_capabilities(
-                            notification_options=InitializationOptions().capabilities.notifications,
-                            experimental_capabilities=InitializationOptions().capabilities.experimental,
-                        ),
-                    ),
-                )
+@mcp.tool()
+async def list_projects() -> list[dict[str, Any]]:
+    """List all projects in Easypanel with their basic metadata."""
+    return await client.list_projects()
 
-        starlette_app = Starlette(
-            debug=True,
-            routes=[
-                Route("/sse", endpoint=handle_sse),
-                Mount("/messages", app=sse.handle_post_message),
-            ],
-        )
-        
-        logger.info(f"MCP server running on SSE at {host}:{port}")
-        
-        # Run uvicorn
-        config_uvicorn = uvicorn.Config(
-            starlette_app, 
-            host=host, 
-            port=port, 
-            log_level="info"
-        )
-        server = uvicorn.Server(config_uvicorn)
-        await server.serve()
+@mcp.tool()
+async def get_project(project_id: str) -> dict[str, Any]:
+    """Get detailed information about a specific project."""
+    return await client.get_project(project_id)
+
+@mcp.tool()
+async def create_project(name: str, description: Optional[str] = None) -> dict[str, Any]:
+    """Create a new project in EasyPanel."""
+    return await client.create_project(name, description)
+
+@mcp.tool()
+async def delete_project(project_id: str) -> dict[str, Any]:
+    """Delete a project from EasyPanel."""
+    return await client.delete_project(project_id)
+
+# ========== Services ==========
+
+@mcp.tool()
+async def list_services(project_id: Optional[str] = None) -> list[dict[str, Any]]:
+    """List all services in EasyPanel, optionally filtered by project."""
+    return await client.list_services(project_id)
+
+@mcp.tool()
+async def get_service(service_id: str) -> dict[str, Any]:
+    """Get detailed information about a specific service."""
+    return await client.get_service(service_id)
+
+@mcp.tool()
+async def create_service(name: str, project_id: str, image: str, config: Optional[dict[str, Any]] = None) -> dict[str, Any]:
+    """Create a new service in EasyPanel (app type)."""
+    return await client.create_service(name, project_id, image, config)
+
+@mcp.tool()
+async def restart_service(service_id: str) -> dict[str, Any]:
+    """Restart a service."""
+    return await client.restart_service(service_id)
+
+@mcp.tool()
+async def deploy_service(service_id: str) -> dict[str, Any]:
+    """Trigger a redeployment of a specific service."""
+    return await client.deploy_service(service_id)
+
+# ========== Low-level API Access ==========
+
+@mcp.tool()
+async def trpc_call(procedure: str, input_data: Optional[dict[str, Any]] = None, method: str = "POST") -> Any:
+    """Make a raw tRPC call to the Easypanel API for advanced operations."""
+    return await client._trpc_request(procedure, input_data, method)
 
 if __name__ == "__main__":
-    import sys
-    
-    # Get port from env
-    port = int(os.environ.get("PORT", 8080))
+    # Get configuration from env
+    port = int(os.environ.get("PORT", os.environ.get("MCP_PORT", 8080)))
     host = os.environ.get("MCP_HOST", "0.0.0.0")
     
-    server = MCPServer()
-    
+    # Check for transport mode
+    transport = "stdio"
     if len(sys.argv) > 1 and sys.argv[1] in ["http", "sse"]:
-        asyncio.run(server.run_sse(host=host, port=port))
-    else:
-        asyncio.run(server.run_stdio())
+        transport = "sse"
+        
+    logger.info(f"Starting MCP server on {transport.upper()} (Host: {host}, Port: {port})")
+    mcp.run(transport=transport, host=host, port=port)
