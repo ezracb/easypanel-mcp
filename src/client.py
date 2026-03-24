@@ -151,7 +151,7 @@ class EasyPanelClient:
     async def list_projects(self) -> list[dict[str, Any]]:
         """List all projects."""
         try:
-            result = await self._trpc_request("projects.listProjects")
+            result = await self._trpc_request("projects.listProjectsAndServices")
             if isinstance(result, dict) and "data" in result:
                 return result.get("data", [])
             return result if isinstance(result, list) else []
@@ -203,16 +203,21 @@ class EasyPanelClient:
             projects = result.get("data", []) if isinstance(result, dict) else result
             
             if project_id:
-                # Filter services by project
+                # Filter services by project ID or Name
                 for proj in projects:
-                    if proj.get("id") == project_id:
+                    if proj.get("id") == project_id or proj.get("name") == project_id:
                         return proj.get("services", [])
                 return []
             else:
                 # Collect all services from all projects
                 services = []
                 for proj in projects:
-                    services.extend(proj.get("services", []))
+                    proj_services = proj.get("services", [])
+                    # Inject project info into each service for context
+                    for s in proj_services:
+                        s["projectName"] = proj.get("name")
+                        s["projectId"] = proj.get("id")
+                    services.extend(proj_services)
                 return services
         except Exception as e:
             logger.error(f"Error listing services: {e}")
