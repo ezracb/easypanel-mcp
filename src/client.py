@@ -149,12 +149,10 @@ class EasyPanelClient:
     # ========== Project Management ==========
     
     async def list_projects(self) -> list[dict[str, Any]]:
-        """List all projects."""
+        """List all projects (DEBUG: returns raw result)."""
         try:
             result = await self._trpc_request("projects.listProjectsAndServices")
-            if isinstance(result, dict) and "data" in result:
-                return result.get("data", [])
-            return result if isinstance(result, list) else []
+            return result
         except Exception as e:
             logger.error(f"Error listing projects: {e}")
             return []
