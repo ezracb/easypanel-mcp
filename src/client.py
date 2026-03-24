@@ -126,12 +126,8 @@ class EasyPanelClient:
             response.raise_for_status()
             result = response.json()
             
-            # Extract data from tRPC response structure:
-            # { "result": { "data": { "json": {...}, "meta": {...} } } }
-            data = result.get("result", {}).get("data", {})
-            if "json" in data:
-                return data["json"]
-            return data
+            # DEBUG: return full result structure
+            return result.get("result", {})
             
         except httpx.HTTPStatusError as e:
             error_msg = e.response.text
@@ -148,14 +144,13 @@ class EasyPanelClient:
 
     # ========== Project Management ==========
     
-    async def list_projects(self) -> list[dict[str, Any]]:
-        """List all projects (DEBUG: returns raw result)."""
+    async def list_projects(self) -> Any:
+        """List all projects (DEBUG: returns raw trpc result)."""
         try:
-            result = await self._trpc_request("projects.listProjectsAndServices")
-            return result
+            return await self._trpc_request("projects.listProjectsAndServices")
         except Exception as e:
             logger.error(f"Error listing projects: {e}")
-            return []
+            return {"error": str(e)}
 
     async def get_project(self, project_id: str) -> dict[str, Any]:
         """Get project details (inspect)."""
