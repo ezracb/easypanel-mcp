@@ -221,6 +221,40 @@ class EasyPanelClient:
             logger.error(f"Error getting service: {e}")
             return {}
 
+    async def get_service_logs(self, service_id: str, lines: int = 100) -> list[str]:
+        """Get service logs."""
+        try:
+            # logs procedure usually follows this pattern
+            data = {"id": service_id, "lines": lines}
+            result = await self._trpc_request("services.app.getLogs", data, method="GET")
+            if isinstance(result, list):
+                return result
+            if isinstance(result, dict) and "logs" in result:
+                return result["logs"]
+            return []
+        except Exception as e:
+            logger.error(f"Error getting logs: {e}")
+            return []
+
+    async def update_service(self, service_id: str, config: dict[str, Any]) -> dict[str, Any]:
+        """Update service configuration."""
+        try:
+            data = {"id": service_id, **config}
+            return await self._trpc_request("services.app.updateService", data)
+        except Exception as e:
+            logger.error(f"Error updating service: {e}")
+            return {}
+
+    async def set_service_env(self, service_id: str, env: str) -> dict[str, Any]:
+        """Set environment variables for a service."""
+        try:
+            # setEnv is often a separate procedure or part of updateService
+            # In Easypanel, it's typically app.updateService with 'env' key
+            return await self.update_service(service_id, {"env": env})
+        except Exception as e:
+            logger.error(f"Error setting env: {e}")
+            return {}
+
     async def create_service(
         self,
         name: str,

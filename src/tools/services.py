@@ -148,6 +148,24 @@ class ServicesTools:
                     },
                     "required": ["service_id"]
                 }
+            },
+            {
+                "name": "set_service_env",
+                "description": "Set environment variables for a service",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "service_id": {
+                            "type": "string",
+                            "description": "Service ID"
+                        },
+                        "env": {
+                            "type": "string",
+                            "description": "Environment variables in KEY=VALUE format (one per line)"
+                        }
+                    },
+                    "required": ["service_id", "env"]
+                }
             }
         ]
     
@@ -237,6 +255,17 @@ class ServicesTools:
                     "success": True,
                     "data": logs,
                     "message": f"Retrieved {len(logs)} log lines for service {service_id}"
+                }
+            
+            elif name == "set_service_env":
+                service_id = arguments.get("service_id")
+                env = arguments.get("env")
+                
+                result = await self.client.set_service_env(service_id, env)
+                return {
+                    "success": True,
+                    "data": result,
+                    "message": f"Environment for service {service_id} updated successfully"
                 }
             
             else:
